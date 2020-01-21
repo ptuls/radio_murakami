@@ -2,10 +2,14 @@
 
 **Welcome to the Radio Murakami repository!**
 
+Here, we develop a bot that spouts out quotes as good as the writings of [Haruki Murakami](https://en.wikipedia.org/wiki/Haruki_Murakami) himself. This is based off his writing style as well as quotes and interviews he has done in the past.
+
 ## Data
+
 
 ## Model
 
+We fine tuned a GPT-2 and BERT model using the datasets above.
 
 ## References
 
