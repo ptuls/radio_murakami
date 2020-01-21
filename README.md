@@ -1,2 +1,9 @@
-# radio_murakami
-A bot to spout the goodness of Haruki Murakami
+# Radio Murakami
+
+** Welcome to the Radio Murakami repository!**
+
+## Data
+
+## Model
+
+
