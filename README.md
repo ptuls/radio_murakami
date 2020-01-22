@@ -6,7 +6,7 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 
 ## Data
 
-### Interviews
+### Interviews & Short Essays
 - [Jazz Messenger](https://www.nytimes.com/2007/07/08/books/review/Murakami-t.html?action=click&module=RelatedCoverage&pgtype=Article&region=Footer)
 - [Haruki Murakami Says He Doesn’t Dream. He Writes.](https://www.nytimes.com/2018/10/10/books/murakami-killing-commendatore.html)
 - [What’s Needed is Magic: Writing Advice from Haruki Murakami](https://lithub.com/whats-needed-is-magic-writing-advice-from-haruki-murakami/)
@@ -17,6 +17,12 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 - [The Best of Haruki Murakami’s Advice Column](https://www.vulture.com/2015/02/best-of-haruki-murakami-advice-column.html)
 - [A Conversation with Murakami about Sputnik Sweetheart](http://www.harukimurakami.com/resource_category/q_and_a/a-conversation-with-haruki-murakami-about-sputnik-sweetheart)
 - [Questions for Murakami about Kafka on the Shore](http://www.harukimurakami.com/resource_category/q_and_a/questions-for-haruki-murakami-about-kafka-on-the-shore)
+- [The novelist in wartime](https://www.salon.com/control/2009/02/20/haruki_murakami/)
+- [Surreal often more real for author Haruki Murakami](https://www.reuters.com/article/us-books-author-murakami-idUSTRE5AO11720091125)
+- [The Salon: Haruki Murakami](https://www.salon.com/control/1997/12/16/int_2/)
+- [An Interview with Haruki Murakami](https://www.bookbrowse.com/author_interviews/full/index.cfm?author_number=1103)
+- [When I Run I Am in a Peaceful Place](https://www.spiegel.de/international/world/spiegel-interview-with-haruki-murakami-when-i-run-i-am-in-a-peaceful-place-a-536608.html)
+- [Haruki Murakami on Parallel Realities](https://www.newyorker.com/books/this-week-in-fiction/haruki-murakami-2018-09-03)
 
 To be updated
 - [Free Haruki Murakami Short Stories, Essays, Interviews, Speeches](https://bookoblivion.com/2016/12/05/free-haruki-muakami-short-stories-essays/)
