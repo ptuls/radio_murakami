@@ -6,6 +6,21 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 
 ## Data
 
+### Interviews
+- [Jazz Messenger](https://www.nytimes.com/2007/07/08/books/review/Murakami-t.html?action=click&module=RelatedCoverage&pgtype=Article&region=Footer)
+- [Haruki Murakami Says He Doesn’t Dream. He Writes.](https://www.nytimes.com/2018/10/10/books/murakami-killing-commendatore.html)
+- [What’s Needed is Magic: Writing Advice from Haruki Murakami](https://lithub.com/whats-needed-is-magic-writing-advice-from-haruki-murakami/)
+- [Haruki Murakami, The Art of Fiction No. 182](https://www.theparisreview.org/interviews/2/haruki-murakami-the-art-of-fiction-no-182-haruki-murakami)
+- [An Unrealistic Dreamer](https://beb.mobi/2012/02/07/speaking-on-fukushima-an-unrealistic-dreamer-haruki-murakami/)
+- [Haruki Murakami: The Moment I Became a Novelist](https://lithub.com/haruki-murakami-the-moment-i-became-a-novelist/#)
+- [Always on the Side of the Egg](https://www.haaretz.com/israel-news/culture/1.5076881)
+- [The Best of Haruki Murakami’s Advice Column](https://www.vulture.com/2015/02/best-of-haruki-murakami-advice-column.html)
+- [A Conversation with Murakami about Sputnik Sweetheart](http://www.harukimurakami.com/resource_category/q_and_a/a-conversation-with-haruki-murakami-about-sputnik-sweetheart)
+- [Questions for Murakami about Kafka on the Shore](http://www.harukimurakami.com/resource_category/q_and_a/questions-for-haruki-murakami-about-kafka-on-the-shore)
+
+To be updated
+- [Free Haruki Murakami Short Stories, Essays, Interviews, Speeches](https://bookoblivion.com/2016/12/05/free-haruki-muakami-short-stories-essays/)
+- [All works by Haruki Murakami on The New Yorker](https://www.newyorker.com/contributors/haruki-murakami)
 
 ## Model
 
