@@ -130,3 +130,7 @@ dmypy.json
 
 # Mac specific
 .DS_Store
+
+# IntelliJ specific
+.idea
+*.iml
