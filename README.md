@@ -43,7 +43,7 @@ Once installed, in the command line of the repository, run
 ```
 pre-commit install
 ```
-This will install `pre-commit` to the Git hook, so that `pre-commit` will run and fix files covered in its config before committing. 
+This will install `pre-commit` to the Git hook, so that `pre-commit` will run and fix files covered in its config before committing.
 
 ## References
 
