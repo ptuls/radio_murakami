@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import torch
 from transformers import GPT2Model, GPT2Tokenizer
 
