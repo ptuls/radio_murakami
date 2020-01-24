@@ -32,6 +32,15 @@ To be updated
 
 We fine tuned a GPT-2 and BERT model using the datasets above.
 
+## Contributors
+
+In this repository, we use `pre-commit` for ensuring consistency of formatting. To install for Mac, run
+```
+brew install pre-commit
+```
+
+
+
 ## References
 
 [1] Radford A., Wu J., Child R., Luan D., Amodei D., and Sutskever I., "Language Models are Unsupervised Multitask Learners", 2019. ([link](https://d4mucfpksywv.cloudfront.net/better-language-models/language_models_are_unsupervised_multitask_learners.pdf))
