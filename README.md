@@ -34,12 +34,16 @@ We fine tuned a GPT-2 and BERT model using the datasets above.
 
 ## Contributors
 
-In this repository, we use `pre-commit` for ensuring consistency of formatting. To install for Mac, run
+In this repository, we use [`pre-commit`](https://pre-commit.com/) to ensure consistency of formatting. To install for Mac, run
 ```
 brew install pre-commit
 ```
 
-
+Once installed, in the command line of the repository, run
+```
+pre-commit install
+```
+This will install `pre-commit` to the Git hook, so that `pre-commit` will run and fix files covered in its config before committing. 
 
 ## References
 
