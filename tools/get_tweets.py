@@ -1,12 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
 import tweepy
 
 from tweepy.error import TweepError
-
-# username to look up
-username = input("Enter username: ")
 
 # max number of tweets allowed to fetch
 MAX_TWEET_FETCH_COUNT = 200
@@ -74,4 +71,6 @@ def main(username):
 
 
 if __name__ == "__main__":
+    # username to look up
+    username = input("Enter username: ")
     main(username)
