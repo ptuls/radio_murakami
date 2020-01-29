@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import tweepy
 import os
+import tweepy
 
-# enter your Twitter API credentials
-consumer_key = os.getenv("TWITTER_CONSUMER_KEY")
-consumer_secret = ""
-access_token = ""
-access_token_secret = ""
+from tweepy.error import TweepError
 
 # username to look up
 username = input("Enter username: ")
 
+# max number of tweets allowed to fetch
+MAX_TWEET_FETCH_COUNT = 200
+
 
 def get_all_tweets(username):
+    # enter your Twitter API credentials
+    consumer_key = os.getenv("CONSUMER_KEY")
+    consumer_secret = os.getenv("CONSUMER_SECRET")
+    access_token = os.getenv("ACCESS_TOKEN")
+    access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
+
     # authorise twitter, initialise tweepy
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
@@ -22,40 +26,52 @@ def get_all_tweets(username):
 
     # initialise a list to hold all the tweets
     all_tweets = []
+    new_tweets = []
+    last_id = None
+    iteration = 0
 
-    # make initial request for most recent tweets (200 is the max allowed count)
-    new_tweets = api.user_timeline(
-        screen_name=username, count=200, tweet_mode="extended"
-    )
+    while new_tweets or iteration == 0:
+        print(f"getting tweets before id {last_id}")
 
-    # save most recent tweets
-    all_tweets.extend(new_tweets)
+        # make initial request for most recent tweets (200 is the max allowed count)
+        try:
+            new_tweets = api.user_timeline(
+                screen_name=username,
+                count=MAX_TWEET_FETCH_COUNT,
+                tweet_mode="extended",
+                max_id=last_id,
+            )
+        except TweepError:
+            print("Username {username} doesn't exist")
+            break
 
-    # save the id of the last tweet id less one, to be used in max_id, which returns
-    # only statuses with an ID less than (that is, older than) or equal to the specified ID
-    last = all_tweets[-1].id - 1
+        if not new_tweets:
+            print(f"Username {username} has not published any tweets")
+            break
 
-    # keep fetching tweets till there's no more left
-    while len(new_tweets) > 0:
-        print(f"getting tweets before id %s" % last)
+        # save most recent tweets
+        all_tweets.extend([tweet.full_text for tweet in new_tweets])
 
-        new_tweets = api.user_timeline(
-            screen_name=username, count=200, tweet_mode="extended", max_id=last
-        )
+        # save the id of the last tweet id less one, to be used in max_id, which returns
+        # only statuses with an ID less than (that is, older than) or equal to the specified ID
+        last_id = new_tweets.max_id - 1
+        iteration += 1
 
-        all_tweets.extend(new_tweets)
+    return all_tweets
 
-        last = all_tweets[-1].id - 1
 
-    output = [tweet.full_text for tweet in all_tweets]
-
+def write_output(all_tweets):
     # store output in text file
-    with open(f"%s_tweets.txt" % username, "w") as f:
-        for tweet in output:
-            f.write("%s\n" % tweet)
+    with open(f"{username}_tweets.txt", "w") as f:
+        for tweet in all_tweets:
+            f.write(tweet + "\n")
 
-    pass
+
+def main(username):
+    all_tweets = get_all_tweets(username)
+    if all_tweets:
+        write_output(all_tweets)
 
 
 if __name__ == "__main__":
-    get_all_tweets(username)
+    main(username)
