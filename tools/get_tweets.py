@@ -53,7 +53,8 @@ def get_all_tweets(username, config):
             break
 
         if not new_tweets:
-            print(f"Username {username} has not published any tweets")
+            if first_iteration:
+                print(f"Username {username} has not published any tweets")
             break
 
         # save most recent tweets
@@ -64,6 +65,7 @@ def get_all_tweets(username, config):
         last_id = new_tweets.max_id - 1
         first_iteration = False
 
+    print(f"tweets retrieved: {len(all_tweets)}")
     return all_tweets
 
 
