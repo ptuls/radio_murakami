@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import tweepy
+import os
 
 # enter your Twitter API credentials
-consumer_key = ""
+consumer_key = os.getenv("TWITTER_CONSUMER_KEY")
 consumer_secret = ""
 access_token = ""
 access_token_secret = ""
@@ -14,14 +15,13 @@ username = input("Enter username: ")
 
 
 def get_all_tweets(username):
-
     # authorise twitter, initialise tweepy
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
     api = tweepy.API(auth)
 
     # initialise a list to hold all the tweets
-    alltweets = []
+    all_tweets = []
 
     # make initial request for most recent tweets (200 is the max allowed count)
     new_tweets = api.user_timeline(
@@ -29,10 +29,11 @@ def get_all_tweets(username):
     )
 
     # save most recent tweets
-    alltweets.extend(new_tweets)
+    all_tweets.extend(new_tweets)
 
-    # save the id of the last tweet id less one, to be used in max_id, which returns only statuses with an ID less than (that is, older than) or equal to the specified ID
-    last = alltweets[-1].id - 1
+    # save the id of the last tweet id less one, to be used in max_id, which returns
+    # only statuses with an ID less than (that is, older than) or equal to the specified ID
+    last = all_tweets[-1].id - 1
 
     # keep fetching tweets till there's no more left
     while len(new_tweets) > 0:
@@ -42,11 +43,11 @@ def get_all_tweets(username):
             screen_name=username, count=200, tweet_mode="extended", max_id=last
         )
 
-        alltweets.extend(new_tweets)
+        all_tweets.extend(new_tweets)
 
-        last = alltweets[-1].id - 1
+        last = all_tweets[-1].id - 1
 
-    output = [tweet.full_text for tweet in alltweets]
+    output = [tweet.full_text for tweet in all_tweets]
 
     # store output in text file
     with open(f"%s_tweets.txt" % username, "w") as f:
