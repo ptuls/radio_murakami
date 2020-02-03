@@ -77,7 +77,7 @@ def write_output(all_tweets: List[str]):
             f.write(tweet + "\n---\n")
 
 
-def main(username, config):
+def main(username: str, config: AccessConfig):
     all_tweets = get_all_tweets(username, config)
     if all_tweets:
         write_output(all_tweets)
