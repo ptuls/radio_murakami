@@ -4,6 +4,7 @@ import os
 import tweepy
 
 from collections import namedtuple
+from typing import List
 from tweepy.error import TweepError
 
 # max number of tweets allowed to fetch
@@ -69,7 +70,7 @@ def get_all_tweets(username: str, config: AccessConfig):
     return all_tweets
 
 
-def write_output(all_tweets: list):
+def write_output(all_tweets: List[str]):
     # store output in text file
     with open(f"{username}_tweets.txt", "w") as f:
         for tweet in all_tweets:
