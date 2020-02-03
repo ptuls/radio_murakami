@@ -25,7 +25,7 @@ def get_access_config():
     )
 
 
-def get_all_tweets(username, config):
+def get_all_tweets(username: str, config: AccessConfig):
     # authorise twitter, initialise tweepy
     auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
     auth.set_access_token(config.access_token, config.access_token_secret)
@@ -69,7 +69,7 @@ def get_all_tweets(username, config):
     return all_tweets
 
 
-def write_output(all_tweets):
+def write_output(all_tweets: list):
     # store output in text file
     with open(f"{username}_tweets.txt", "w") as f:
         for tweet in all_tweets:
