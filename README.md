@@ -27,7 +27,7 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 - [All works by Haruki Murakami on The New Yorker](https://www.newyorker.com/contributors/haruki-murakami)
 
 ### Tweets
-[@Murakami_kz](https://twitter.com/Murakami_kz@)
+[@Murakami_kz](https://twitter.com/Murakami_kz)
 
 ## Model
 
