@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import argparse
 import os
 import tweepy
 
@@ -19,7 +20,7 @@ AccessConfig = namedtuple(
 )
 
 
-def get_access_config():
+def get_access_config() -> AccessConfig:
     return AccessConfig(
         consumer_key=os.getenv("CONSUMER_KEY"),
         consumer_secret=os.getenv("CONSUMER_SECRET"),
@@ -28,7 +29,7 @@ def get_access_config():
     )
 
 
-def get_all_tweets(username: str, config: AccessConfig):
+def get_all_tweets(username: str, config: AccessConfig) -> List[str]:
     # authorise twitter, initialise tweepy
     auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
     auth.set_access_token(config.access_token, config.access_token_secret)
@@ -72,8 +73,8 @@ def get_all_tweets(username: str, config: AccessConfig):
     return all_tweets
 
 
-def write_output(all_tweets: List[str], format: str):
-    if format == "csv":
+def write_output(all_tweets: List[str], is_csv: bool) -> None:
+    if is_csv:
         # create list of strings to populate the csv
         out_tweets = [[all_tweets[i]] for i in range(len(all_tweets))]
 
@@ -81,30 +82,25 @@ def write_output(all_tweets: List[str], format: str):
         with open(f"{username}_tweets.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerows(out_tweets)
-
-    elif format == "txt":
+    else:
         # store output in txt file
         with open(f"{username}_tweets.txt", "w") as f:
             for tweet in all_tweets:
                 f.write(tweet + "\n---\n")
-    else:
-        sys.exit()
 
 
-def main(username: str, config: AccessConfig, format: str):
-    if format not in ["csv", "txt"]:
-        print(f"The format {format} doesn't exist. Try csv or txt instead.")
-        sys.exit()
-
+def main(username: str, config: AccessConfig, is_csv: bool) -> None:
     all_tweets = get_all_tweets(username, config)
 
     if all_tweets:
-        write_output(all_tweets, format)
+        write_output(all_tweets, is_csv)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Get tweets from a user and write to desired file format.")
+    parser.add_argument("--csv", action="store_true", help="outputs tweet formats to single column CSV")
+    args = parser.parse_args()
     # username to look up
     username = input("Enter username: ")
-    format = input("Enter output format: ")
     config = get_access_config()
-    main(username, config, format)
+    main(username, config, args.csv)
