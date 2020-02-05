@@ -97,8 +97,14 @@ def main(username: str, config: AccessConfig, is_csv: bool) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Get tweets from a user and write to desired file format.")
-    parser.add_argument("--csv", action="store_true", help="outputs tweet formats to single column CSV")
+    parser = argparse.ArgumentParser(
+        description="Get tweets from a user and write to desired file format."
+    )
+    parser.add_argument(
+        "--csv",
+        action="store_true",
+        help="outputs tweet formats to single column CSV",
+    )
     args = parser.parse_args()
     # username to look up
     username = input("Enter username: ")
