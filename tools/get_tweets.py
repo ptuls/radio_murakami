@@ -4,6 +4,8 @@ import os
 import tweepy
 
 from collections import namedtuple
+import csv
+import sys
 from typing import List
 from tweepy.error import TweepError
 
@@ -70,21 +72,39 @@ def get_all_tweets(username: str, config: AccessConfig):
     return all_tweets
 
 
-def write_output(all_tweets: List[str]):
-    # store output in text file
-    with open(f"{username}_tweets.txt", "w") as f:
-        for tweet in all_tweets:
-            f.write(tweet + "\n---\n")
+def write_output(all_tweets: List[str], format: str):
+    if format == "csv":
+        # create list of strings to populate the csv
+        out_tweets = [[all_tweets[i]] for i in range(len(all_tweets))]
+
+        # store output in csv file
+        with open(f"{username}_tweets.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(out_tweets)
+
+    elif format == "txt":
+        # store output in txt file
+        with open(f"{username}_tweets.txt", "w") as f:
+            for tweet in all_tweets:
+                f.write(tweet + "\n---\n")
+    else:
+        sys.exit()
 
 
-def main(username: str, config: AccessConfig):
+def main(username: str, config: AccessConfig, format: str):
+    if format not in ["csv", "txt"]:
+        print(f"The format {format} doesn't exist. Try csv or txt instead.")
+        sys.exit()
+
     all_tweets = get_all_tweets(username, config)
+
     if all_tweets:
-        write_output(all_tweets)
+        write_output(all_tweets, format)
 
 
 if __name__ == "__main__":
     # username to look up
     username = input("Enter username: ")
+    format = input("Enter output format: ")
     config = get_access_config()
-    main(username, config)
+    main(username, config, format)
