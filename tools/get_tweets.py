@@ -51,6 +51,7 @@ def get_all_tweets(username: str, config: AccessConfig) -> List[str]:
                 count=MAX_TWEET_FETCH_COUNT,
                 tweet_mode="extended",
                 max_id=last_id,
+                include_rts=False,
             )
         except TweepError:
             print(f"Username {username} doesn't exist")
