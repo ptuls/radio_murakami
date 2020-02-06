@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import argparse
 import os
 import tweepy
 
 from collections import namedtuple
+import csv
+import sys
 from typing import List
 from tweepy.error import TweepError
 
@@ -17,7 +20,7 @@ AccessConfig = namedtuple(
 )
 
 
-def get_access_config():
+def get_access_config() -> AccessConfig:
     return AccessConfig(
         consumer_key=os.getenv("CONSUMER_KEY"),
         consumer_secret=os.getenv("CONSUMER_SECRET"),
@@ -26,7 +29,9 @@ def get_access_config():
     )
 
 
-def get_all_tweets(username: str, config: AccessConfig):
+def get_all_tweets(
+    username: str, config: AccessConfig, with_retweets: bool
+) -> List[str]:
     # authorise twitter, initialise tweepy
     auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
     auth.set_access_token(config.access_token, config.access_token_secret)
@@ -48,6 +53,7 @@ def get_all_tweets(username: str, config: AccessConfig):
                 count=MAX_TWEET_FETCH_COUNT,
                 tweet_mode="extended",
                 max_id=last_id,
+                include_rts=with_retweets,
             )
         except TweepError:
             print(f"Username {username} doesn't exist")
@@ -70,21 +76,48 @@ def get_all_tweets(username: str, config: AccessConfig):
     return all_tweets
 
 
-def write_output(all_tweets: List[str]):
-    # store output in text file
-    with open(f"{username}_tweets.txt", "w") as f:
-        for tweet in all_tweets:
-            f.write(tweet + "\n---\n")
+def write_output(all_tweets: List[str], is_csv: bool) -> None:
+    if is_csv:
+        # create list of strings to populate the csv
+        out_tweets = [[all_tweets[i]] for i in range(len(all_tweets))]
+
+        # store output in csv file
+        with open(f"{username}_tweets.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(out_tweets)
+    else:
+        # store output in txt file
+        with open(f"{username}_tweets.txt", "w") as f:
+            for tweet in all_tweets:
+                f.write(tweet + "\n---\n")
 
 
-def main(username: str, config: AccessConfig):
-    all_tweets = get_all_tweets(username, config)
+def main(
+    username: str, config: AccessConfig, is_csv: bool, with_retweets: bool
+) -> None:
+    all_tweets = get_all_tweets(username, config, with_retweets)
+
     if all_tweets:
-        write_output(all_tweets)
+        write_output(all_tweets, is_csv)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Get tweets from a user and write to desired file format."
+    )
+    parser.add_argument(
+        "--csv",
+        action="store_true",
+        help="outputs tweet formats to single column CSV",
+    )
+    parser.add_argument(
+        "-r",
+        "--retweets",
+        action="store_true",
+        help="output including retweets",
+    )
+    args = parser.parse_args()
     # username to look up
     username = input("Enter username: ")
     config = get_access_config()
-    main(username, config)
+    main(username, config, args.csv, args.retweets)
