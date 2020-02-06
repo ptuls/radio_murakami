@@ -29,7 +29,9 @@ def get_access_config() -> AccessConfig:
     )
 
 
-def get_all_tweets(username: str, config: AccessConfig) -> List[str]:
+def get_all_tweets(
+    username: str, config: AccessConfig, with_retweets: bool
+) -> List[str]:
     # authorise twitter, initialise tweepy
     auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
     auth.set_access_token(config.access_token, config.access_token_secret)
@@ -51,7 +53,7 @@ def get_all_tweets(username: str, config: AccessConfig) -> List[str]:
                 count=MAX_TWEET_FETCH_COUNT,
                 tweet_mode="extended",
                 max_id=last_id,
-                include_rts=False,
+                include_rts=with_retweets,
             )
         except TweepError:
             print(f"Username {username} doesn't exist")
@@ -90,8 +92,10 @@ def write_output(all_tweets: List[str], is_csv: bool) -> None:
                 f.write(tweet + "\n---\n")
 
 
-def main(username: str, config: AccessConfig, is_csv: bool) -> None:
-    all_tweets = get_all_tweets(username, config)
+def main(
+    username: str, config: AccessConfig, is_csv: bool, with_retweets: bool
+) -> None:
+    all_tweets = get_all_tweets(username, config, with_retweets)
 
     if all_tweets:
         write_output(all_tweets, is_csv)
@@ -106,8 +110,14 @@ if __name__ == "__main__":
         action="store_true",
         help="outputs tweet formats to single column CSV",
     )
+    parser.add_argument(
+        "-r",
+        "--retweets",
+        action="store_true",
+        help="output including retweets",
+    )
     args = parser.parse_args()
     # username to look up
     username = input("Enter username: ")
     config = get_access_config()
-    main(username, config, args.csv)
+    main(username, config, args.csv, args.retweets)
