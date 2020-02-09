@@ -4,7 +4,7 @@
 Sample GPT-2 model.
 
 Usage:
-    sample.py <seed_text>  --num_samples=<num_samples> --max_length=<max_length>
+    sample.py <seed_text> --num_samples=<num_samples> --max_length=<max_length>
 
 Options:
 -h --help                    Show this screen.
@@ -22,7 +22,7 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 log = logging.getLogger()
 
 
-def main(seed_text, max_length=100, num_samples=1):
+def main(seed_text: str, max_length: int = 100, num_samples: int = 1) -> None:
     log.info("loading tokenizer and model")
     # load the tokenizer: what it does is to split text into a format the model can understand
     tokenizer = GPT2Tokenizer.from_pretrained(PRETRAINED_WEIGHTS)

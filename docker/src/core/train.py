@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 
 import torch
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader, RandomSampler, DistributedSampler
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import (
     AdamW,
     GPT2Config,
@@ -38,7 +38,10 @@ logger = logging.getLogger(__name__)
 
 
 """
-Built on top of HuggingFace, in particular the script here https://github.com/huggingface/transformers/blob/master/examples/run_lm_finetuning.py
+Built on top of HuggingFace, in particular the script here
+https://github.com/huggingface/transformers/blob/master/examples/run_lm_finetuning.py
+
+Does not support multi-GPU training
 """
 
 
@@ -129,21 +132,14 @@ def train(
     """
     Train the model
     """
-    if args.local_rank in [-1, 0]:
-        tb_writer = SummaryWriter()
-
-    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    tb_writer = SummaryWriter()
 
     def collate(examples: List[torch.Tensor]):
         return pad_sequence(
             examples, batch_first=True, padding_value=tokenizer.pad_token_id
         )
 
-    train_sampler = (
-        RandomSampler(train_dataset)
-        if args.local_rank == -1
-        else DistributedSampler(train_dataset)
-    )
+    train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(
         train_dataset,
         sampler=train_sampler,
@@ -214,29 +210,7 @@ def train(
             torch.load(os.path.join(args.model_name_or_path, "scheduler.pt"))
         )
 
-    if args.fp16:
-        try:
-            from apex import amp
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training."
-            )
-        model, optimizer = amp.initialize(
-            model, optimizer, opt_level=args.fp16_opt_level
-        )
-
-    # multi-gpu training (should be after apex fp16 initialization)
-    if args.n_gpu > 1:
-        model = torch.nn.DataParallel(model)
-
-    # Distributed training (should be after apex fp16 initialization)
-    if args.local_rank != -1:
-        model = torch.nn.parallel.DistributedDataParallel(
-            model,
-            device_ids=[args.local_rank],
-            output_device=args.local_rank,
-            find_unused_parameters=True,
-        )
+    model = torch.nn.DataParallel(model)
 
     # Train!
     logger.info("***** Running training *****")
@@ -298,18 +272,11 @@ def train(
 
     model.zero_grad()
     train_iterator = trange(
-        epochs_trained,
-        int(args.num_train_epochs),
-        desc="Epoch",
-        disable=args.local_rank not in [-1, 0],
+        epochs_trained, int(args.num_train_epochs), desc="Epoch"
     )
     set_seed(args)  # Added here for reproducibility
     for _ in train_iterator:
-        epoch_iterator = tqdm(
-            train_dataloader,
-            desc="Iteration",
-            disable=args.local_rank not in [-1, 0],
-        )
+        epoch_iterator = tqdm(train_dataloader, desc="Iteration")
         for step, batch in enumerate(epoch_iterator):
 
             # Skip past any already trained steps if resuming training
@@ -337,35 +304,25 @@ def train(
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
 
-            if args.fp16:
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
+            loss.backward()
 
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
-                if args.fp16:
-                    torch.nn.utils.clip_grad_norm_(
-                        amp.master_params(optimizer), args.max_grad_norm
-                    )
-                else:
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), args.max_grad_norm
-                    )
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), args.max_grad_norm
+                )
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
                 global_step += 1
 
                 if (
-                    args.local_rank in [-1, 0]
-                    and args.logging_steps > 0
+                    args.logging_steps > 0
                     and global_step % args.logging_steps == 0
                 ):
                     # Log metrics
                     if (
-                        args.local_rank == -1 and args.evaluate_during_training
+                        args.evaluate_during_training
                     ):  # Only evaluate when single GPU otherwise metrics may not average well
                         results = evaluate(args, model, tokenizer)
                         for key, value in results.items():
@@ -382,11 +339,7 @@ def train(
                     )
                     logging_loss = tr_loss
 
-                if (
-                    args.local_rank in [-1, 0]
-                    and args.save_steps > 0
-                    and global_step % args.save_steps == 0
-                ):
+                if args.save_steps > 0 and global_step % args.save_steps == 0:
                     checkpoint_prefix = "checkpoint"
                     # Save model checkpoint
                     output_dir = os.path.join(
@@ -427,8 +380,7 @@ def train(
             train_iterator.close()
             break
 
-    if args.local_rank in [-1, 0]:
-        tb_writer.close()
+    tb_writer.close()
 
     return global_step, tr_loss / global_step
 
@@ -440,9 +392,7 @@ def evaluate(
     eval_output_dir = args.output_dir
 
     eval_dataset = load_and_cache_examples(args, tokenizer, evaluate=True)
-
-    if args.local_rank in [-1, 0]:
-        os.makedirs(eval_output_dir, exist_ok=True)
+    os.makedirs(eval_output_dir, exist_ok=True)
 
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
     # Note that DistributedSampler samples randomly
@@ -460,10 +410,6 @@ def evaluate(
         collate_fn=collate,
     )
 
-    # multi-gpu evaluate
-    if args.n_gpu > 1:
-        model = torch.nn.DataParallel(model)
-
     # Eval!
     logger.info("***** Running evaluation {} *****".format(prefix))
     logger.info("  Num examples = %d", len(eval_dataset))
@@ -473,9 +419,7 @@ def evaluate(
     model.eval()
 
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
-        inputs, labels = (
-            mask_tokens(batch, tokenizer, args) if args.mlm else (batch, batch)
-        )
+        inputs, labels = (batch, batch)
         inputs = inputs.to(args.device)
         labels = labels.to(args.device)
 
