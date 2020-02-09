@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-
+import pickle
 
 import torch
-import pickle
-from torch.utils.data import (
-    DataLoader,
-    Dataset,
-    RandomSampler,
-    SequentialSampler,
-)
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from torch.utils.data import Dataset
+from transformers import PreTrainedTokenizer
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_BLOCK_SIZE = 512
 
 
 class TextDataset(Dataset):
@@ -22,7 +18,7 @@ class TextDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         args,
         file_path: str,
-        block_size=512,
+        block_size=DEFAULT_BLOCK_SIZE,
     ):
         assert os.path.isfile(file_path)
         directory, filename = os.path.split(file_path)
@@ -57,7 +53,7 @@ class TextDataset(Dataset):
                     )
                 )
             # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
-            # If your dataset is small, first you should loook for a bigger one :-) and second you
+            # If your dataset is small, first you should look for a bigger one :-) and second you
             # can change this behavior by adding (model specific) padding.
 
             logger.info(
@@ -81,7 +77,7 @@ class LineByLineTextDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         args,
         file_path: str,
-        block_size=512,
+        block_size=DEFAULT_BLOCK_SIZE,
     ):
         assert os.path.isfile(file_path)
         # Here, we do not cache the features, operating under the assumption

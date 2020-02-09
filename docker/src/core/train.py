@@ -1,36 +1,34 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-import glob
 import random
-import re
-import shutil
-
-import numpy as np
-from tqdm import tqdm, trange
 from typing import Dict, List, Tuple
 
+import numpy as np
 import torch
+
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
+from tqdm import tqdm, trange
 from transformers import (
     AdamW,
-    GPT2Config,
-    GPT2LMHeadModel,
     GPT2Model,
     GPT2Tokenizer,
     get_linear_schedule_with_warmup,
 )
-
-from src.util.text import TextDataset, LineByLineTextDataset
 
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
     from tensorboardX import SummaryWriter
 
+from src.util.text import TextDataset, LineByLineTextDataset
+from src.util.checkpoint import rotate_checkpoints
 
+
+# use GPT-2 as the generator
 PRETRAINED_WEIGHTS = "gpt2"
+# set random seed for reproducibility
 SEED = 42
 
 
@@ -45,12 +43,9 @@ Does not support multi-GPU training
 """
 
 
-def main():
-    tokenizer = GPT2Tokenizer.from_pretrained(PRETRAINED_WEIGHTS)
-    model = GPT2Model.from_pretrained(PRETRAINED_WEIGHTS)
-
-
-def load_and_cache_examples(args, tokenizer: GPT2Tokenizer, evaluate=False):
+def load_and_cache_examples(
+    args, tokenizer: GPT2Tokenizer, evaluate: bool = False
+):
     file_path = args.eval_data_file if evaluate else args.train_data_file
     if args.line_by_line:
         return LineByLineTextDataset(
@@ -62,68 +57,12 @@ def load_and_cache_examples(args, tokenizer: GPT2Tokenizer, evaluate=False):
         )
 
 
-def set_seed(with_gpu):
-    random.seed(SEED)
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
+def set_seed(with_gpu: bool, seed: int = SEED) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     if with_gpu:
-        torch.cuda.manual_seed_all(SEED)
-
-
-def _sorted_checkpoints(
-    args, checkpoint_prefix="checkpoint", use_mtime=False
-) -> List[str]:
-    ordering_and_checkpoint_path = []
-
-    glob_checkpoints = glob.glob(
-        os.path.join(args.output_dir, "{}-*".format(checkpoint_prefix))
-    )
-
-    for path in glob_checkpoints:
-        if use_mtime:
-            ordering_and_checkpoint_path.append((os.path.getmtime(path), path))
-        else:
-            regex_match = re.match(
-                ".*{}-([0-9]+)".format(checkpoint_prefix), path
-            )
-            if regex_match and regex_match.groups():
-                ordering_and_checkpoint_path.append(
-                    (int(regex_match.groups()[0]), path)
-                )
-
-    checkpoints_sorted = sorted(ordering_and_checkpoint_path)
-    checkpoints_sorted = [checkpoint[1] for checkpoint in checkpoints_sorted]
-    return checkpoints_sorted
-
-
-def _rotate_checkpoints(
-    args, checkpoint_prefix="checkpoint", use_mtime=False
-) -> None:
-    if not args.save_total_limit:
-        return
-    if args.save_total_limit <= 0:
-        return
-
-    # Check if we should delete older checkpoint(s)
-    checkpoints_sorted = _sorted_checkpoints(
-        args, checkpoint_prefix, use_mtime
-    )
-    if len(checkpoints_sorted) <= args.save_total_limit:
-        return
-
-    number_of_checkpoints_to_delete = max(
-        0, len(checkpoints_sorted) - args.save_total_limit
-    )
-    checkpoints_to_be_deleted = checkpoints_sorted[
-        :number_of_checkpoints_to_delete
-    ]
-    for checkpoint in checkpoints_to_be_deleted:
-        logger.info(
-            "Deleting older checkpoint [{}] due to args.save_total_limit".format(
-                checkpoint
-            )
-        )
-        shutil.rmtree(checkpoint)
+        torch.cuda.manual_seed_all(seed)
 
 
 def train(
@@ -186,6 +125,7 @@ def train(
         lr=args.learning_rate,
         eps=args.adam_epsilon,
     )
+    # Learning policy schedule
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=args.warmup_steps,
@@ -237,7 +177,7 @@ def train(
     # Check if continuing training from a checkpoint
     if args.model_name_or_path and os.path.exists(args.model_name_or_path):
         try:
-            # set global_step to gobal_step of last saved checkpoint from model path
+            # set global_step to global_step of last saved checkpoint from model path
             checkpoint_suffix = args.model_name_or_path.split("-")[-1].split(
                 "/"
             )[0]
@@ -288,19 +228,10 @@ def train(
             inputs = inputs.to(args.device)
             labels = labels.to(args.device)
             model.train()
-            outputs = (
-                model(inputs, masked_lm_labels=labels)
-                if args.mlm
-                else model(inputs, labels=labels)
-            )
-            loss = outputs[
-                0
-            ]  # model outputs are always tuple in transformers (see doc)
+            outputs = model(inputs, labels=labels)
+            # model outputs are always tuple in transformers (see doc)
+            loss = outputs[0]
 
-            if args.n_gpu > 1:
-                loss = (
-                    loss.mean()
-                )  # mean() to average on multi-gpu parallel training
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
 
@@ -358,7 +289,7 @@ def train(
                     )
                     logger.info("Saving model checkpoint to %s", output_dir)
 
-                    _rotate_checkpoints(args, checkpoint_prefix)
+                    rotate_checkpoints(args, checkpoint_prefix)
 
                     torch.save(
                         optimizer.state_dict(),
@@ -373,10 +304,11 @@ def train(
                         output_dir,
                     )
 
-            if args.max_steps > 0 and global_step > args.max_steps:
+            if 0 < args.max_steps < global_step:
                 epoch_iterator.close()
                 break
-        if args.max_steps > 0 and global_step > args.max_steps:
+
+        if 0 < args.max_steps < global_step:
             train_iterator.close()
             break
 
@@ -394,7 +326,7 @@ def evaluate(
     eval_dataset = load_and_cache_examples(args, tokenizer, evaluate=True)
     os.makedirs(eval_output_dir, exist_ok=True)
 
-    args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
+    args.eval_batch_size = args.per_gpu_eval_batch_size
     # Note that DistributedSampler samples randomly
 
     def collate(examples: List[torch.Tensor]):
@@ -424,11 +356,7 @@ def evaluate(
         labels = labels.to(args.device)
 
         with torch.no_grad():
-            outputs = (
-                model(inputs, masked_lm_labels=labels)
-                if args.mlm
-                else model(inputs, labels=labels)
-            )
+            outputs = model(inputs, labels=labels)
             lm_loss = outputs[0]
             eval_loss += lm_loss.mean().item()
         nb_eval_steps += 1
@@ -448,7 +376,3 @@ def evaluate(
             writer.write("%s = %s\n" % (key, str(result[key])))
 
     return result
-
-
-if __name__ == "__main__":
-    main()
