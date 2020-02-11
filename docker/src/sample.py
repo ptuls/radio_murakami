@@ -52,4 +52,5 @@ def main(seed_text: str, max_length: int = 100, num_samples: int = 1) -> None:
 
 if __name__ == "__main__":
     args = docopt(__doc__, version="Sample version 0.1")
+    print(args)
     main(args["<seed_text>"], args["<max_length>"], args["<num_samples>"])

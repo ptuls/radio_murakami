@@ -57,11 +57,11 @@ def load_and_cache_examples(
         )
 
 
-def set_seed(with_gpu: bool, seed: int = SEED) -> None:
+def set_seed(args, seed: int = SEED) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    if with_gpu:
+    if args.with_gpu:
         torch.cuda.manual_seed_all(seed)
 
 
@@ -70,6 +70,11 @@ def train(
 ) -> Tuple[int, float]:
     """
     Train the model
+
+    Steps:
+    1. Sample and load dataset
+    2. Set up optimizer and learning schedule
+    3. Train model over preset number of steps
     """
     tb_writer = SummaryWriter()
 
@@ -224,7 +229,7 @@ def train(
                 steps_trained_in_current_epoch -= 1
                 continue
 
-            inputs, labels = (batch, batch)
+            inputs, labels = batch, batch
             inputs = inputs.to(args.device)
             labels = labels.to(args.device)
             model.train()
