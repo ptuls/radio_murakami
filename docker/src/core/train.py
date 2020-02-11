@@ -2,7 +2,8 @@
 import logging
 import os
 import random
-from typing import Dict, List, Tuple
+from functools import partial
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -14,16 +15,17 @@ from transformers import (
     AdamW,
     GPT2Model,
     GPT2Tokenizer,
+    PreTrainedTokenizer,
     get_linear_schedule_with_warmup,
 )
 
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except ImportError:
-    from tensorboardX import SummaryWriter
+# try:
+#     from torch.utils.tensorboard import SummaryWriter
+# except ImportError:
+#     from tensorboardX import SummaryWriter
 
-from src.util.text import TextDataset, LineByLineTextDataset
-from src.util.checkpoint import rotate_checkpoints
+from util.text import TextDataset, LineByLineTextDataset
+from util.checkpoint import rotate_checkpoints
 
 
 # use GPT-2 as the generator
@@ -43,17 +45,33 @@ Does not support multi-GPU training
 """
 
 
+def _collate(
+    tokenizer: PreTrainedTokenizer, examples: List[torch.Tensor]
+) -> Any:
+    return pad_sequence(
+        examples, batch_first=True, padding_value=tokenizer.pad_token_id
+    )
+
+
 def load_and_cache_examples(
-    args, tokenizer: GPT2Tokenizer, evaluate: bool = False
+    args, tokenizer: PreTrainedTokenizer, evaluate: bool = False
 ):
-    file_path = args.eval_data_file if evaluate else args.train_data_file
-    if args.line_by_line:
+    file_path = (
+        args["<eval_data_file>"] if evaluate else args["<train_data_file>"]
+    )
+    if args["--line-by-line"]:
         return LineByLineTextDataset(
-            tokenizer, args, file_path=file_path, block_size=args.block_size
+            tokenizer,
+            args,
+            file_path=file_path,
+            block_size=int(args["--block_size"]),
         )
     else:
         return TextDataset(
-            tokenizer, args, file_path=file_path, block_size=args.block_size
+            tokenizer,
+            args,
+            file_path=file_path,
+            block_size=int(args["--block_size"]),
         )
 
 
@@ -66,7 +84,7 @@ def set_seed(args, seed: int = SEED) -> None:
 
 
 def train(
-    args, train_dataset, model: GPT2Model, tokenizer: GPT2Tokenizer
+    args, model: GPT2Model, tokenizer: GPT2Tokenizer
 ) -> Tuple[int, float]:
     """
     Train the model
@@ -76,14 +94,12 @@ def train(
     2. Set up optimizer and learning schedule
     3. Train model over preset number of steps
     """
-    tb_writer = SummaryWriter()
+    # tb_writer = SummaryWriter()
 
-    def collate(examples: List[torch.Tensor]):
-        return pad_sequence(
-            examples, batch_first=True, padding_value=tokenizer.pad_token_id
-        )
+    train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False)
 
     train_sampler = RandomSampler(train_dataset)
+    collate = partial(_collate, tokenizer)
     train_dataloader = DataLoader(
         train_dataset,
         sampler=train_sampler,
@@ -252,28 +268,28 @@ def train(
                 model.zero_grad()
                 global_step += 1
 
-                if (
-                    args.logging_steps > 0
-                    and global_step % args.logging_steps == 0
-                ):
-                    # Log metrics
-                    if (
-                        args.evaluate_during_training
-                    ):  # Only evaluate when single GPU otherwise metrics may not average well
-                        results = evaluate(args, model, tokenizer)
-                        for key, value in results.items():
-                            tb_writer.add_scalar(
-                                "eval_{}".format(key), value, global_step
-                            )
-                    tb_writer.add_scalar(
-                        "lr", scheduler.get_lr()[0], global_step
-                    )
-                    tb_writer.add_scalar(
-                        "loss",
-                        (tr_loss - logging_loss) / args.logging_steps,
-                        global_step,
-                    )
-                    logging_loss = tr_loss
+                # if (
+                #     args.logging_steps > 0
+                #     and global_step % args.logging_steps == 0
+                # ):
+                #     # Log metrics
+                #     if (
+                #         args.evaluate_during_training
+                #     ):  # Only evaluate when single GPU otherwise metrics may not average well
+                #         results = evaluate(args, model, tokenizer)
+                #         for key, value in results.items():
+                #             tb_writer.add_scalar(
+                #                 "eval_{}".format(key), value, global_step
+                #             )
+                #     tb_writer.add_scalar(
+                #         "lr", scheduler.get_lr()[0], global_step
+                #     )
+                #     tb_writer.add_scalar(
+                #         "loss",
+                #         (tr_loss - logging_loss) / args.logging_steps,
+                #         global_step,
+                #     )
+                #     logging_loss = tr_loss
 
                 if args.save_steps > 0 and global_step % args.save_steps == 0:
                     checkpoint_prefix = "checkpoint"
@@ -317,7 +333,7 @@ def train(
             train_iterator.close()
             break
 
-    tb_writer.close()
+    # tb_writer.close()
 
     return global_step, tr_loss / global_step
 
@@ -332,7 +348,6 @@ def evaluate(
     os.makedirs(eval_output_dir, exist_ok=True)
 
     args.eval_batch_size = args.per_gpu_eval_batch_size
-    # Note that DistributedSampler samples randomly
 
     def collate(examples: List[torch.Tensor]):
         return pad_sequence(

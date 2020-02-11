@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 """
 Sample GPT-2 model.
@@ -10,20 +10,19 @@ Options:
 -h --help                    Show this screen.
 --num_samples=<num_samples>  Number of samples to generate [default: 1].
 """
-import logging
-
 from docopt import docopt
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from util.inference import sample_sequence
+from util.log import setup_logging
 
 PRETRAINED_WEIGHTS = "gpt2"
-FORMAT = "%(asctime)-15s %(user)-8s %(message)s"
-# logging.basicConfig(format=FORMAT, level=logging.INFO)
-log = logging.getLogger()
+FORMAT = "%(levelname)s:%(asctime)s:%(message)s"
+
+logger = setup_logging()
 
 
 def main(seed_text: str, max_length: int = 100, num_samples: int = 1) -> None:
-    log.info("loading tokenizer and model")
+    logger.info("loading tokenizer and model")
     # load the tokenizer: what it does is to split text into a format the model can understand
     tokenizer = GPT2Tokenizer.from_pretrained(PRETRAINED_WEIGHTS)
     # load the model: this may take some time as it needs to download the pretrained weights from the Internet
@@ -46,8 +45,8 @@ def main(seed_text: str, max_length: int = 100, num_samples: int = 1) -> None:
             clean_up_tokenization_spaces=True,
             skip_special_tokens=True,
         )
-        print(text)
-        log.info("\n")
+        logger.info(text)
+        logger.info("\n")
 
 
 if __name__ == "__main__":

@@ -76,7 +76,7 @@ def sample_sequence(
                 temperature if temperature > 0 else 1.0
             )
 
-            # reptition penalty from CTRL (https://arxiv.org/abs/1909.05858)
+            # repetition penalty from CTRL (https://arxiv.org/abs/1909.05858)
             for _ in set(generated.view(-1).tolist()):
                 next_token_logits[_] /= repetition_penalty
 

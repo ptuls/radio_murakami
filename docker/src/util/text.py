@@ -7,9 +7,9 @@ import torch
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
-logger = logging.getLogger(__name__)
-
 DEFAULT_BLOCK_SIZE = 512
+
+logger = logging.getLogger(__name__)
 
 
 class TextDataset(Dataset):
