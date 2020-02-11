@@ -18,7 +18,7 @@ from util.inference import sample_sequence
 
 PRETRAINED_WEIGHTS = "gpt2"
 FORMAT = "%(asctime)-15s %(user)-8s %(message)s"
-logging.basicConfig(format=FORMAT, level=logging.INFO)
+# logging.basicConfig(format=FORMAT, level=logging.INFO)
 log = logging.getLogger()
 
 
@@ -46,11 +46,14 @@ def main(seed_text: str, max_length: int = 100, num_samples: int = 1) -> None:
             clean_up_tokenization_spaces=True,
             skip_special_tokens=True,
         )
-        log.info(text)
+        print(text)
         log.info("\n")
 
 
 if __name__ == "__main__":
     args = docopt(__doc__, version="Sample version 0.1")
-    print(args)
-    main(args["<seed_text>"], args["<max_length>"], args["<num_samples>"])
+    main(
+        args["<seed_text>"],
+        int(args["--max_length"]),
+        int(args["--num_samples"]),
+    )
