@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-FORMAT = "%(levelname)s:%(asctime)s:%(message)s"
+FORMAT = "%(asctime)s\t%(levelname)s\t%(message)s"
 
 
 def setup_logging() -> logging.Logger:

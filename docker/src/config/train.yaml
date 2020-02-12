@@ -1,0 +1,16 @@
+block_size: 512
+batch-_ize: 10
+max_steps: 100
+gradient_accumulation_steps: 1
+line_by_line: true
+num_train_epochs: 20
+warmup_steps: 100
+model_name_or_path: "murakami1"
+learning_rate: 0.001
+adam_epsilon: 0.01
+logging_steps: 10
+evaluate_during_training: true
+device: 0
+save_steps: 100
+output_dir: "murakami1"
+weight_decay: 0.01
