@@ -24,11 +24,14 @@ def main():
         temperature=0.7,
         top_k=40,
         top_p=0.9,
-        repetition_penalty=1.0)
+        repetition_penalty=1.0,
+    )
 
     for i in range(num_samples):
         text = tokenizer.decode(
-            generated[i, 0:].tolist(), clean_up_tokenization_spaces=True, skip_special_tokens=True
+            generated[i, 0:].tolist(),
+            clean_up_tokenization_spaces=True,
+            skip_special_tokens=True,
         )
         print(text)
         print()
