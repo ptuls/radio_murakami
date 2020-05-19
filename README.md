@@ -25,6 +25,7 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 - [Haruki Murakami on Parallel Realities](https://www.newyorker.com/books/this-week-in-fiction/haruki-murakami-2018-09-03)
 - [Free Haruki Murakami Short Stories, Essays, Interviews, Speeches](https://bookoblivion.com/2016/12/05/free-haruki-muakami-short-stories-essays/)
 - [All works by Haruki Murakami on The New Yorker](https://www.newyorker.com/contributors/haruki-murakami)
+- [The Underground Worlds of Haruki Murakami](https://www.newyorker.com/culture/the-new-yorker-interview/the-underground-worlds-of-haruki-murakami)
 
 ### Tweets
 [@Murakami_kz](https://twitter.com/Murakami_kz)
