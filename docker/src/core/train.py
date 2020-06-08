@@ -15,9 +15,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, RandomSampler, DistributedSampler
 from transformers import (
     AdamW,
-    GPT2Config,
     GPT2LMHeadModel,
-    GPT2Model,
     GPT2Tokenizer,
     get_linear_schedule_with_warmup,
 )
@@ -43,8 +41,8 @@ Built on top of HuggingFace, in particular the script here https://github.com/hu
 
 
 def main():
-    tokenizer = GPT2Tokenizer.from_pretrained(PRETRAINED_WEIGHTS)
-    model = GPT2Model.from_pretrained(PRETRAINED_WEIGHTS)
+    tokenizer = GPT2Tokenizer.from_pretrained("C:\gpt2")
+    model = GPT2LMHeadModel.from_pretrained("C:\gpt2")
 
 
 def load_and_cache_examples(args, tokenizer: GPT2Tokenizer, evaluate=False):
@@ -123,47 +121,82 @@ def _rotate_checkpoints(
         shutil.rmtree(checkpoint)
 
 
+def mask_tokens(
+    inputs: torch.Tensor, tokenizer: GPT2Tokenizer, args
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """ Prepare masked tokens inputs/labels for masked language modeling: 80% MASK, 10% random, 10% original. """
+    labels = inputs.clone()
+    # We sample a few tokens in each sequence for masked-LM training (with probability args.mlm_probability defaults to 0.15 in Bert/RoBERTa)
+    probability_matrix = torch.full(labels.shape, args.mlm_probability)
+    special_tokens_mask = [
+        tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True)
+        for val in labels.tolist()
+    ]
+    probability_matrix.masked_fill_(
+        torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0
+    )
+    if tokenizer._pad_token is not None:
+        padding_mask = labels.eq(tokenizer.pad_token_id)
+        probability_matrix.masked_fill_(padding_mask, value=0.0)
+    masked_indices = torch.bernoulli(probability_matrix).bool()
+    labels[~masked_indices] = -100  # We only compute loss on masked tokens
+
+    # 80% of the time, we replace masked input tokens with tokenizer.mask_token ([MASK])
+    indices_replaced = (
+        torch.bernoulli(torch.full(labels.shape, 0.8)).bool() & masked_indices
+    )
+    inputs[indices_replaced] = tokenizer.convert_tokens_to_ids(
+        tokenizer.mask_token
+    )
+
+    # 10% of the time, we replace masked input tokens with random word
+    indices_random = (
+        torch.bernoulli(torch.full(labels.shape, 0.5)).bool()
+        & masked_indices
+        & ~indices_replaced
+    )
+    random_words = torch.randint(
+        len(tokenizer), labels.shape, dtype=torch.long
+    )
+    inputs[indices_random] = random_words[indices_random]
+
+    # The rest of the time (10% of the time) we keep the masked input tokens unchanged
+    return inputs, labels
+
+
 def train(
-    args, train_dataset, model: GPT2Model, tokenizer: GPT2Tokenizer
+    model_name_or_path,
+    train_dataset,
+    model: GPT2LMHeadModel,
+    tokenizer: GPT2Tokenizer,
 ) -> Tuple[int, float]:
     """
     Train the model
     """
-    if args.local_rank in [-1, 0]:
-        tb_writer = SummaryWriter()
+    tb_writer = SummaryWriter()
 
-    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    max_steps = 100
+    gradient_accumulation_steps = 10
+    train_batch_size = 10
+    max_grad_norm = 1.0
 
     def collate(examples: List[torch.Tensor]):
         return pad_sequence(
             examples, batch_first=True, padding_value=tokenizer.pad_token_id
         )
 
-    train_sampler = (
-        RandomSampler(train_dataset)
-        if args.local_rank == -1
-        else DistributedSampler(train_dataset)
-    )
+    train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(
         train_dataset,
         sampler=train_sampler,
-        batch_size=args.train_batch_size,
+        batch_size=train_batch_size,
         collate_fn=collate,
     )
 
-    if args.max_steps > 0:
-        t_total = args.max_steps
-        args.num_train_epochs = (
-            args.max_steps
-            // (len(train_dataloader) // args.gradient_accumulation_steps)
-            + 1
-        )
-    else:
-        t_total = (
-            len(train_dataloader)
-            // args.gradient_accumulation_steps
-            * args.num_train_epochs
-        )
+    t_total = max_steps
+    num_train_epochs = (
+        max_steps // (len(train_dataloader) // gradient_accumulation_steps) + 1
+    )
 
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
@@ -174,7 +207,7 @@ def train(
                 for n, p in model.named_parameters()
                 if not any(nd in n for nd in no_decay)
             ],
-            "weight_decay": args.weight_decay,
+            "weight_decay": 0.001,
         },
         {
             "params": [
@@ -185,75 +218,21 @@ def train(
             "weight_decay": 0.0,
         },
     ]
-    optimizer = AdamW(
-        optimizer_grouped_parameters,
-        lr=args.learning_rate,
-        eps=args.adam_epsilon,
-    )
+    optimizer = AdamW(optimizer_grouped_parameters, lr=0.001, eps=1e-6)
     scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=args.warmup_steps,
-        num_training_steps=t_total,
+        optimizer, num_warmup_steps=3, num_training_steps=t_total
     )
-
-    # Check if saved optimizer or scheduler states exist
-    if (
-        args.model_name_or_path
-        and os.path.isfile(
-            os.path.join(args.model_name_or_path, "optimizer.pt")
-        )
-        and os.path.isfile(
-            os.path.join(args.model_name_or_path, "scheduler.pt")
-        )
-    ):
-        # Load in optimizer and scheduler states
-        optimizer.load_state_dict(
-            torch.load(os.path.join(args.model_name_or_path, "optimizer.pt"))
-        )
-        scheduler.load_state_dict(
-            torch.load(os.path.join(args.model_name_or_path, "scheduler.pt"))
-        )
-
-    if args.fp16:
-        try:
-            from apex import amp
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training."
-            )
-        model, optimizer = amp.initialize(
-            model, optimizer, opt_level=args.fp16_opt_level
-        )
-
-    # multi-gpu training (should be after apex fp16 initialization)
-    if args.n_gpu > 1:
-        model = torch.nn.DataParallel(model)
-
-    # Distributed training (should be after apex fp16 initialization)
-    if args.local_rank != -1:
-        model = torch.nn.parallel.DistributedDataParallel(
-            model,
-            device_ids=[args.local_rank],
-            output_device=args.local_rank,
-            find_unused_parameters=True,
-        )
 
     # Train!
     logger.info("***** Running training *****")
     logger.info("  Num examples = %d", len(train_dataset))
-    logger.info("  Num Epochs = %d", args.num_train_epochs)
-    logger.info(
-        "  Instantaneous batch size per GPU = %d",
-        args.per_gpu_train_batch_size,
-    )
+    logger.info("  Num Epochs = %d", num_train_epochs)
     logger.info(
         "  Total train batch size (w. parallel, distributed & accumulation) = %d",
-        args.train_batch_size
-        * args.gradient_accumulation_steps
-        * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
+        train_batch_size * gradient_accumulation_steps,
     )
     logger.info(
-        "  Gradient Accumulation steps = %d", args.gradient_accumulation_steps
+        "  Gradient Accumulation steps = %d", gradient_accumulation_steps
     )
     logger.info("  Total optimization steps = %d", t_total)
 
@@ -261,18 +240,16 @@ def train(
     epochs_trained = 0
     steps_trained_in_current_epoch = 0
     # Check if continuing training from a checkpoint
-    if args.model_name_or_path and os.path.exists(args.model_name_or_path):
+    if model_name_or_path and os.path.exists(model_name_or_path):
         try:
             # set global_step to gobal_step of last saved checkpoint from model path
-            checkpoint_suffix = args.model_name_or_path.split("-")[-1].split(
-                "/"
-            )[0]
+            checkpoint_suffix = model_name_or_path.split("-")[-1].split("/")[0]
             global_step = int(checkpoint_suffix)
             epochs_trained = global_step // (
-                len(train_dataloader) // args.gradient_accumulation_steps
+                len(train_dataloader) // gradient_accumulation_steps
             )
             steps_trained_in_current_epoch = global_step % (
-                len(train_dataloader) // args.gradient_accumulation_steps
+                len(train_dataloader) // gradient_accumulation_steps
             )
 
             logger.info(
@@ -298,17 +275,12 @@ def train(
 
     model.zero_grad()
     train_iterator = trange(
-        epochs_trained,
-        int(args.num_train_epochs),
-        desc="Epoch",
-        disable=args.local_rank not in [-1, 0],
+        epochs_trained, int(num_train_epochs), desc="Epoch", disable=False
     )
-    set_seed(args)  # Added here for reproducibility
+    set_seed(True)  # Added here for reproducibility
     for _ in train_iterator:
         epoch_iterator = tqdm(
-            train_dataloader,
-            desc="Iteration",
-            disable=args.local_rank not in [-1, 0],
+            train_dataloader, desc="Iteration", disable=False
         )
         for step, batch in enumerate(epoch_iterator):
 
@@ -318,41 +290,24 @@ def train(
                 continue
 
             inputs, labels = (batch, batch)
-            inputs = inputs.to(args.device)
-            labels = labels.to(args.device)
+            inputs = inputs.to(0)
+            labels = labels.to(0)
             model.train()
-            outputs = (
-                model(inputs, masked_lm_labels=labels)
-                if args.mlm
-                else model(inputs, labels=labels)
-            )
+            outputs = model(inputs, masked_lm_labels=labels)
             loss = outputs[
                 0
             ]  # model outputs are always tuple in transformers (see doc)
 
-            if args.n_gpu > 1:
-                loss = (
-                    loss.mean()
-                )  # mean() to average on multi-gpu parallel training
-            if args.gradient_accumulation_steps > 1:
-                loss = loss / args.gradient_accumulation_steps
+            if gradient_accumulation_steps > 1:
+                loss = loss / gradient_accumulation_steps
 
-            if args.fp16:
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
+            loss.backward()
 
             tr_loss += loss.item()
-            if (step + 1) % args.gradient_accumulation_steps == 0:
-                if args.fp16:
-                    torch.nn.utils.clip_grad_norm_(
-                        amp.master_params(optimizer), args.max_grad_norm
-                    )
-                else:
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), args.max_grad_norm
-                    )
+            if (step + 1) % gradient_accumulation_steps == 0:
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), max_grad_norm
+                )
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
@@ -420,21 +375,20 @@ def train(
                         output_dir,
                     )
 
-            if args.max_steps > 0 and global_step > args.max_steps:
+            if max_steps > 0 and global_step > max_steps:
                 epoch_iterator.close()
                 break
-        if args.max_steps > 0 and global_step > args.max_steps:
+        if max_steps > 0 and global_step > max_steps:
             train_iterator.close()
             break
 
-    if args.local_rank in [-1, 0]:
-        tb_writer.close()
+    tb_writer.close()
 
     return global_step, tr_loss / global_step
 
 
 def evaluate(
-    args, model: GPT2Model, tokenizer: GPT2Tokenizer, prefix=""
+    args, model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, prefix=""
 ) -> Dict:
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     eval_output_dir = args.output_dir

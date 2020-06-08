@@ -134,3 +134,9 @@ dmypy.json
 # IntelliJ specific
 .idea
 *.iml
+
+# VSCode specific
+.vscode/
+
+# model directory
+murakami_bot/
