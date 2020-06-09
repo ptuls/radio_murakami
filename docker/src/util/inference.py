@@ -1,18 +1,26 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import torch
-import torch.nn.functional as F
+
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from typing import Generator
 
 
-def set_seed(seed):
+def set_seed(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
 
 
 class QuoteGenerator:
     def __init__(
-        self, model, tokenizer, temperature, top_k, top_p, repetition_penalty
-    ):
+        self,
+        model: GPT2LMHeadModel,
+        tokenizer: GPT2Tokenizer,
+        temperature: float,
+        top_k: float,
+        top_p: float,
+        repetition_penalty: float,
+    ) -> None:
         self.model = model
         self.tokenizer = tokenizer
         self.temperature = temperature
@@ -20,9 +28,10 @@ class QuoteGenerator:
         self.top_p = top_p
         self.repetition_penalty = repetition_penalty
 
-    def sample_sequence(self, context, max_length, num_samples):
+    def sample_sequence(self, context: str, max_length: int, num_samples: int):
         context = self.tokenizer.encode(context)
         context = torch.tensor(context, dtype=torch.long)
+        # start each generated sentence with seed string
         context = context.unsqueeze(0).repeat(num_samples, 1)
         generated = self.model.generate(
             context,
@@ -34,7 +43,9 @@ class QuoteGenerator:
         )
         return generated
 
-    def generate(self, context, max_length, num_samples=1):
+    def generate(
+        self, context: str, max_length: int, num_samples: int = 1
+    ) -> Generator[str]:
         sequences = self.sample_sequence(context, max_length, num_samples)
         for i in range(num_samples):
             text = self.tokenizer.decode(
@@ -42,5 +53,4 @@ class QuoteGenerator:
                 clean_up_tokenization_spaces=True,
                 skip_special_tokens=True,
             )
-            print(text)
-            print("*----------------------------------------------------*")
+            yield text
