@@ -5,13 +5,13 @@ import logging
 
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-from util.inference import sample_sequence
+from util.inference import QuoteGenerator
 
 PRETRAINED_WEIGHTS = "gpt2"
 logging.basicConfig(level=logging.INFO)
 
 
-def main(seed_text: str):
+def main(seed_text: str, max_length: int, num_samples: int) -> None:
     logging.info("checking for gpus")
     logging.info(
         f"number of CUDA enabled devices: {torch.cuda.device_count()}"
@@ -30,32 +30,25 @@ def main(seed_text: str):
     tokenizer = GPT2Tokenizer.from_pretrained("./murakami_bot/")
     # load the model: this may take some time as it needs to download the pretrained weights from the Internet
     model = GPT2LMHeadModel.from_pretrained("./murakami_bot/")
-
-    num_samples = 100
-    generated = sample_sequence(
+    generator = QuoteGenerator(
         model,
         tokenizer,
-        100,
-        seed_text,
-        num_samples=num_samples,
         temperature=0.8,
         top_k=40,
         top_p=0.9,
         repetition_penalty=1.0,
     )
-
-    for i in range(num_samples):
-        text = tokenizer.decode(
-            generated[i, 0:].tolist(),
-            clean_up_tokenization_spaces=True,
-            skip_special_tokens=True,
-        )
-        print(text)
-        print("*----------------------------------------------------*")
+    generator.generate(seed_text, max_length, num_samples)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("seed_str", type=str)
+    parser.add_argument("seed_text", type=str)
+    parser.add_argument(
+        "--max-length", dest="max_length", type=int, default=50
+    )
+    parser.add_argument(
+        "--num-samples", dest="num_samples", type=int, default=10
+    )
     args = parser.parse_args()
-    main(args.seed_str)
+    main(args.seed_text, args.max_length, args.num_samples)
