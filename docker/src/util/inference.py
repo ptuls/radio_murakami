@@ -43,9 +43,7 @@ class QuoteGenerator:
         )
         return generated
 
-    def generate(
-        self, context: str, max_length: int, num_samples: int = 1
-    ) -> Generator[str]:
+    def generate(self, context: str, max_length: int, num_samples: int = 1):
         sequences = self.sample_sequence(context, max_length, num_samples)
         for i in range(num_samples):
             text = self.tokenizer.decode(
