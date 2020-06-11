@@ -137,4 +137,7 @@ dmypy.json
 *.iml
 
 # VSCode specific
-.vscode/settings.json
+.vscode/
+
+# model directory
+murakami_bot/
