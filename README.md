@@ -23,10 +23,12 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 - [An Interview with Haruki Murakami](https://www.bookbrowse.com/author_interviews/full/index.cfm?author_number=1103)
 - [When I Run I Am in a Peaceful Place](https://www.spiegel.de/international/world/spiegel-interview-with-haruki-murakami-when-i-run-i-am-in-a-peaceful-place-a-536608.html)
 - [Haruki Murakami on Parallel Realities](https://www.newyorker.com/books/this-week-in-fiction/haruki-murakami-2018-09-03)
-
-To be updated
 - [Free Haruki Murakami Short Stories, Essays, Interviews, Speeches](https://bookoblivion.com/2016/12/05/free-haruki-muakami-short-stories-essays/)
 - [All works by Haruki Murakami on The New Yorker](https://www.newyorker.com/contributors/haruki-murakami)
+- [The Underground Worlds of Haruki Murakami](https://www.newyorker.com/culture/the-new-yorker-interview/the-underground-worlds-of-haruki-murakami)
+
+### Tweets
+[@Murakami_kz](https://twitter.com/Murakami_kz)
 
 ## Model
 
