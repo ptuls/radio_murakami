@@ -61,7 +61,7 @@ if __name__ == "__main__":
         "--num-samples", dest="num_samples", type=int, default=10
     )
     parser.add_argument(
-        "--model-dir", dest="model_dir", type=str, default="./murakami_bot/"
+        "--model-dir", dest="model_dir", type=str, default="./murakami_bot2/"
     )
     args = parser.parse_args()
     main(args.model_dir, args.seed_text, args.max_length, args.num_samples)
