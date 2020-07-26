@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-from typing import Generator
+from typing import Iterator
 
 
 def set_seed(seed: int) -> None:
@@ -28,7 +28,9 @@ class QuoteGenerator:
         self.top_p = top_p
         self.repetition_penalty = repetition_penalty
 
-    def sample_sequence(self, context: str, max_length: int, num_samples: int):
+    def sample_sequence(
+        self, context: str, max_length: int, num_samples: int
+    ) -> torch.LongTensor:
         context = self.tokenizer.encode(context)
         context = torch.tensor(context, dtype=torch.long)
         # start each generated sentence with seed string
@@ -43,7 +45,9 @@ class QuoteGenerator:
         )
         return generated
 
-    def generate(self, context: str, max_length: int, num_samples: int = 1):
+    def generate(
+        self, context: str, max_length: int, num_samples: int = 1
+    ) -> Iterator[str]:
         sequences = self.sample_sequence(context, max_length, num_samples)
         for i in range(num_samples):
             text = self.tokenizer.decode(
