@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("seed_text", type=str)
     parser.add_argument(
-        "--max-length", dest="max_length", type=int, default=50
+        "--max-length", dest="max_length", type=int, default=100
     )
     parser.add_argument(
         "--num-samples", dest="num_samples", type=int, default=10
