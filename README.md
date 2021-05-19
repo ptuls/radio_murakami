@@ -56,7 +56,7 @@ Run the Docker image by running the shell script `run.sh`. You can also run the 
 ```
 python docker/src/main.py <seed phrase> --num-samples <number of samples> --max-length <maximum token length> --model-dir <model weights path>
 ```
-By default, `<number of samples>` is 50, `<maximum token length>` is 100, and `<model weights path>` is `./murakami_bot/`.
+By default, `<number of samples>` is 50, `<maximum token length>` is 100, and `<model weights path>` is `./murakami_bot/`. You can download our model [here](https://drive.google.com/file/d/1FCkBmeXn1NWVKUslFVQ8a74hI3jYQcNY/view?usp=sharing).
 
 ## References
 
