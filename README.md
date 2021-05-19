@@ -2,9 +2,11 @@
 
 **Welcome to the Radio Murakami repository!**
 
-Here, we develop a bot that spouts out quotes as good as the writings of [Haruki Murakami](https://en.wikipedia.org/wiki/Haruki_Murakami) himself. This is based off his writing style as well as quotes and interviews he has done in the past.
+Here, we develop a bot that spouts out quotes as good as the writings of [Haruki Murakami](https://en.wikipedia.org/wiki/Haruki_Murakami) himself (okay, to a reasonable approximation). This is based off his writing style as well as quotes and interviews he has done in the past. We write about our work right at [Daily Inspirational Quotes from Your Favorite Author using Deep Learning](https://towardsdatascience.com/daily-inspirational-quotes-from-your-favorite-author-using-deep-learning-73534c55ed96).
 
 ## Data
+
+We source our data from all of Murakami's novels, and various sources below.
 
 ### Interviews & Short Essays
 - [Jazz Messenger](https://www.nytimes.com/2007/07/08/books/review/Murakami-t.html?action=click&module=RelatedCoverage&pgtype=Article&region=Footer)
@@ -28,11 +30,12 @@ Here, we develop a bot that spouts out quotes as good as the writings of [Haruki
 - [The Underground Worlds of Haruki Murakami](https://www.newyorker.com/culture/the-new-yorker-interview/the-underground-worlds-of-haruki-murakami)
 
 ### Tweets
+
 [@Murakami_kz](https://twitter.com/Murakami_kz)
 
 ## Model
 
-We fine tuned a GPT-2 and BERT model using the datasets above.
+We fine tuned a GPT-2 model using the datasets above. You can fine-tune the model simply by using a pre-trained GPT-2 model on the data from [here](https://huggingface.co/transformers/model_doc/gpt2.html#).
 
 ## Contributors
 
@@ -53,7 +56,7 @@ Run the Docker image by running the shell script `run.sh`. You can also run the 
 ```
 python docker/src/main.py <seed phrase> --num-samples <number of samples> --max-length <maximum token length> --model-dir <model weights path>
 ```
-By default, `<number of samples>` is 50, `<maximum token length>` is 100, and `<model weights path>` is `./murakami_bot2/`.
+By default, `<number of samples>` is 50, `<maximum token length>` is 100, and `<model weights path>` is `./murakami_bot/`.
 
 ## References
 
