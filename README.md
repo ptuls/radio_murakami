@@ -33,6 +33,8 @@ We source our data from all of Murakami's novels, and various sources below.
 
 [@Murakami_kz](https://twitter.com/Murakami_kz)
 
+We have a simple utility [here](tools\get_tweets.py) that allows you to scrape tweets of a Twitter account.
+
 ## Model
 
 We fine tuned a GPT-2 model using the datasets above. You can fine-tune the model simply by using a pre-trained GPT-2 model on the data from [here](https://huggingface.co/transformers/model_doc/gpt2.html#).
@@ -57,6 +59,7 @@ Run the Docker image by running the shell script `run.sh`. You can also run the 
 python docker/src/main.py <seed phrase> --num-samples <number of samples> --max-length <maximum token length> --model-dir <model weights path>
 ```
 By default, `<number of samples>` is 50, `<maximum token length>` is 100, and `<model weights path>` is `./murakami_bot/`. You can download our model [here](https://drive.google.com/file/d/1FCkBmeXn1NWVKUslFVQ8a74hI3jYQcNY/view?usp=sharing).
+
 
 ## References
 
