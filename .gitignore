@@ -141,3 +141,9 @@ dmypy.json
 
 # model directory
 murakami_bot/
+
+# PyTorch specific
+*.bin
+*.json
+*.pt
+merges.txt

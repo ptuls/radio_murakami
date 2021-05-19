@@ -47,6 +47,14 @@ pre-commit install
 ```
 This will install `pre-commit` to the Git hook, so that `pre-commit` will run and fix files covered in its config before committing.
 
+## Running
+
+Run the Docker image by running the shell script `run.sh`. You can also run the trained model with
+```
+python docker/src/main.py <seed phrase> --num-samples <number of samples> --max-length <maximum token length> --model-dir <model weights path>
+```
+By default, `<number of samples>` is 50, `<maximum token length>` is 100, and `<model weights path>` is `./murakami_bot2/`.
+
 ## References
 
 [1] Radford A., Wu J., Child R., Luan D., Amodei D., and Sutskever I., "Language Models are Unsupervised Multitask Learners", 2019. ([link](https://d4mucfpksywv.cloudfront.net/better-language-models/language_models_are_unsupervised_multitask_learners.pdf))

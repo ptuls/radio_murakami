@@ -55,13 +55,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("seed_text", type=str)
     parser.add_argument(
-        "--max-length", dest="max_length", type=int, default=50
+        "--max-length", dest="max_length", type=int, default=100
     )
     parser.add_argument(
         "--num-samples", dest="num_samples", type=int, default=10
     )
     parser.add_argument(
-        "--model-dir", dest="model_dir", type=str, default="./murakami_bot/"
+        "--model-dir", dest="model_dir", type=str, default="./murakami_bot2/"
     )
     args = parser.parse_args()
     main(args.model_dir, args.seed_text, args.max_length, args.num_samples)
